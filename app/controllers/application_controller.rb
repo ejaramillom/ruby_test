@@ -3,7 +3,7 @@
 class ApplicationController < ActionController::API
   def success_response(record)
     render json: {
-      valid: false,
+      valid: true,
       tin_type: record.tin_type,
       formatted_tin: record.formatted_tin,
       business_registration: record.business_registration
@@ -13,7 +13,6 @@ class ApplicationController < ActionController::API
   def failure_response(record)
     render json: {
       valid: false,
-      record: record,
       errors: record.errors.uniq
     }, status: :unprocessable_entity
   end
