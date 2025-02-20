@@ -3,7 +3,7 @@
 module V1
   class TinController < ApplicationController
     def validator
-      @tin = Tin.new(params)
+      @tin = Tin.new(:tin_params)
 
       if @tin.valid?
         success_response(@tin)
