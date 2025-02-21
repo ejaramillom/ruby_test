@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class TinValidator < ActiveModel::Validator
+  ABN_WEIGHTS = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+
   def validate(record)
     return missing_country_input(record) unless record.country
     return missing_number_input(record) unless record.number
@@ -20,7 +22,7 @@ class TinValidator < ActiveModel::Validator
     return add_invalid_au_error(record) unless au_abn?(@normalized_number) || au_acn?(@normalized_number)
 
     record.valid = true
-    record.tin_type, record.formatted_tin = determine_au_tin_variation(@normalized_number)
+    record.tin_type, record.formatted_tin = determine_au_tin_variation(record, @normalized_number)
   end
 
   def validate_ca(record)
@@ -39,8 +41,10 @@ class TinValidator < ActiveModel::Validator
     record.formatted_tin = @normalized_number.upcase
   end
 
-  def determine_au_tin_variation(number)
-    if number.length == 11
+  def determine_au_tin_variation(record, number)
+    if au_abn?(number)
+      invalid_for_abr(record) unless verify_abn_number(number)
+
       [:au_abn, "#{number[0..1]} #{number[2..4]} #{number[5..7]} #{number[8..10]}"]
     else
       [:au_acn, "#{number[0..2]} #{number[3..5]} #{number[6..8]}"]
@@ -63,6 +67,17 @@ class TinValidator < ActiveModel::Validator
     number.match?(/\d{2}[A-Z0-9]{10}\d[A-Z]\d/)
   end
 
+  def verify_abn_number(number)
+    format = number.chars
+    format[0] = format[0].to_i - 1
+    total = format.each_with_index.sum{|value, key| value.to_i * ABN_WEIGHTS[key]}
+    total % 89 == 0
+  end
+
+  def invalid_for_abr(record)
+    record.errors.add 'Australian Business Register considers this number is invalid. '
+  end
+
   def add_invalid_au_error(record)
     record.errors.add 'Australian tax identifications are either 9 or 11 numbers long, and only digits. Please verify.'
   end
@@ -82,4 +97,6 @@ class TinValidator < ActiveModel::Validator
   def missing_number_input(record)
     record.errors.add 'A number must be specified on the request. Please try again.'
   end
+
+
 end
