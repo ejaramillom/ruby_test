@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class TinValidator < ActiveModel::Validator
-
   def validate(record)
     return missing_country_input(record) unless record.country
     return missing_number_input(record) unless record.number
