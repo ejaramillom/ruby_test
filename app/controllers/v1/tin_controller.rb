@@ -1,21 +1,19 @@
 # frozen_string_literal: true
 
-module V1
-  class TinController < ApplicationController
-    def validator
-      @tin = Tin.new(tin_params)
+class V1::TinController < ApplicationController
+  def validator
+    @tin = Tin.new(tin_params)
 
-      if @tin.valid?
-        success_response(@tin)
-      else
-        failure_response(@tin)
-      end
+    if @tin.valid?
+      success_response(@tin)
+    else
+      failure_response(@tin)
     end
+  end
 
-    private
+  private
 
-    def tin_params
-      params.permit(:country, :number)
-    end
+  def tin_params
+    params.permit(:country, :number)
   end
 end

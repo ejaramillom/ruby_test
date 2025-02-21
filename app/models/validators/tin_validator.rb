@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
 class TinValidator < ActiveModel::Validator
-  def validate(record)
-    @normalized_number = record.number.gsub(' ', '')
 
+  def validate(record)
+    return missing_country_input(record) unless record.country
+    return missing_number_input(record) unless record.number
+
+    @normalized_number = record.number.gsub(' ', '')
     case record.country.downcase
     when 'au' then validate_au(record)
     when 'ca' then validate_ca(record)
@@ -15,7 +18,6 @@ class TinValidator < ActiveModel::Validator
   private
 
   def validate_au(record)
-
     return add_invalid_au_error(record) unless au_abn?(@normalized_number) || au_acn?(@normalized_number)
 
     record.valid = true
@@ -34,8 +36,8 @@ class TinValidator < ActiveModel::Validator
     return add_invalid_in_error(record) unless in_gst?(@normalized_number)
 
     record.valid = true
-    record.tin_type = :ca_gst
-    record.formatted_tin = "#{@normalized_number[0..8]}RT0001"
+    record.tin_type = :in_gst
+    record.formatted_tin = @normalized_number.upcase
   end
 
   def determine_au_tin_variation(number)
@@ -72,5 +74,13 @@ class TinValidator < ActiveModel::Validator
 
   def add_invalid_in_error(record)
     record.errors.add 'Indian tax identifications are 15 digits: 2 numbers, 10 alphanumerics, 1 number, 1 letter and 1 number long. Please verify.'
+  end
+
+  def missing_country_input(record)
+    record.errors.add 'A country must be specified on the request. Please try again.'
+  end
+
+  def missing_number_input(record)
+    record.errors.add 'A number must be specified on the request. Please try again.'
   end
 end
