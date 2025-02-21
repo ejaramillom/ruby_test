@@ -97,6 +97,4 @@ class TinValidator < ActiveModel::Validator
   def missing_number_input(record)
     record.errors.add 'A number must be specified on the request. Please try again.'
   end
-
-
 end
