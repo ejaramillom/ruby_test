@@ -21,6 +21,7 @@ class TinValidator < ActiveModel::Validator
   def validate_au(record)
     return add_invalid_au_error(record) unless au_abn?(@normalized_number) || au_acn?(@normalized_number)
 
+    gst_validation(record) if au_abn?(@normalized_number)
     record.valid = true
     record.tin_type, record.formatted_tin = determine_au_tin_variation(record, @normalized_number)
   end
@@ -49,6 +50,13 @@ class TinValidator < ActiveModel::Validator
     else
       [:au_acn, "#{number[0..2]} #{number[3..5]} #{number[6..8]}"]
     end
+  end
+
+  def gst_validation(record)
+    validation = GstClient.new(record).call
+    gst_validation_error(record, validation[:error]) if validation[:error].presence
+
+    record.business_registration = validation[:body]
   end
 
   def au_abn?(number)
@@ -97,4 +105,9 @@ class TinValidator < ActiveModel::Validator
   def missing_number_input(record)
     record.errors.add 'A number must be specified on the request. Please try again.'
   end
+
+  def gst_validation_error(record, error)
+    record.errors.add error
+  end
+
 end
